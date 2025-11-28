@@ -1,0 +1,9 @@
+fr/trafficsolution/summarizer/SummarizeWorker$SummaryValue.class
+fr/trafficsolution/consolidator/ConsolidateWorker.class
+fr/trafficsolution/util/S3Helper.class
+fr/trafficsolution/util/CSVParser.class
+fr/trafficsolution/util/S3Helper$S3Location.class
+fr/trafficsolution/client/UploadClient.class
+fr/trafficsolution/summarizer/SummarizeWorker.class
+fr/trafficsolution/util/SummaryKey.class
+fr/trafficsolution/consolidator/ConsolidateWorker$Stats.class

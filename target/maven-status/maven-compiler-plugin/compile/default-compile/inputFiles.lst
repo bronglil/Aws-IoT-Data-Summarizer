@@ -1,5 +1,6 @@
-/Users/macbookpro/Documents/Cps2/Semester-3/cloud computing/aws-cloud/src/main/java/fr/trafficsolution/util/CSVParser.java
-/Users/macbookpro/Documents/Cps2/Semester-3/cloud computing/aws-cloud/src/main/java/fr/trafficsolution/summarizer/SummarizeWorker.java
-/Users/macbookpro/Documents/Cps2/Semester-3/cloud computing/aws-cloud/src/main/java/fr/trafficsolution/client/UploadClient.java
-/Users/macbookpro/Documents/Cps2/Semester-3/cloud computing/aws-cloud/src/main/java/fr/trafficsolution/consolidator/ConsolidatorWorker.java
-/Users/macbookpro/Documents/Cps2/Semester-3/cloud computing/aws-cloud/src/main/java/fr/trafficsolution/util/S3Helper.java
+/Users/dev/Documents/Educational/Cps2/Semester -3/Cloud computing/aws-cloud/src/main/java/fr/trafficsolution/util/CSVParser.java
+/Users/dev/Documents/Educational/Cps2/Semester -3/Cloud computing/aws-cloud/src/main/java/fr/trafficsolution/client/UploadClient.java
+/Users/dev/Documents/Educational/Cps2/Semester -3/Cloud computing/aws-cloud/src/main/java/fr/trafficsolution/util/SummaryKey.java
+/Users/dev/Documents/Educational/Cps2/Semester -3/Cloud computing/aws-cloud/src/main/java/fr/trafficsolution/util/S3Helper.java
+/Users/dev/Documents/Educational/Cps2/Semester -3/Cloud computing/aws-cloud/src/main/java/fr/trafficsolution/consolidator/ConsolidateWorker.java
+/Users/dev/Documents/Educational/Cps2/Semester -3/Cloud computing/aws-cloud/src/main/java/fr/trafficsolution/summarizer/SummarizeWorker.java

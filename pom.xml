@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>fr.emse</groupId>
   <artifactId>aws-cloud</artifactId>
   <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <java.version>17</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
+
     <plugins>
+      <!-- Java 17 compiler -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
@@ -17,7 +27,8 @@
           <release>17</release>
         </configuration>
       </plugin>
-      <!-- Maven Shade Plugin - creates JAR-with-dependencies -->
+
+      <!-- Create fat JAR for AWS Lambda (SummarizeWorker + ConsolidateWorker) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -35,14 +46,42 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- Create fat JAR for the Upload Client (to run on EC2) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>upload-client-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <archive>
+                <manifest>
+                  <!-- Main class for your Upload Client -->
+                  <mainClass>fr.trafficsolution.client.UploadClient</mainClass>
+                </manifest>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+              <!-- Base name for the client JAR -->
+              <finalName>upload-client</finalName>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
-  <properties>
-    <java.version>17</java.version>
-  </properties>
+
+  <!-- AWS SDK v2 version management -->
   <dependencyManagement>
     <dependencies>
-      <!-- AWS SDK for Java v2 BOM - manages versions for all AWS SDK v2 dependencies -->
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
@@ -52,55 +91,56 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
   <dependencies>
-    <!-- AWS SDK for Java v2 - S3 for object storage -->
+
+    <!-- AWS SDK v2 for S3 operations -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
     </dependency>
-    
-    <!-- AWS SDK for Java v2 - SQS for message queuing -->
+
+    <!-- SQS (used by workers, fine to have here) -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>sqs</artifactId>
     </dependency>
-    
-    <!-- AWS SDK for Java v2 - SNS for notifications -->
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>sns</artifactId>
-    </dependency>
-    
-    <!-- AWS SDK for Java v2 - Lambda for serverless functions -->
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>lambda</artifactId>
-    </dependency>
-    
-    <!-- AWS Lambda Java Core (for Lambda handler interfaces) -->
+
+    <!-- Lambda Java Core -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-lambda-java-core</artifactId>
       <version>1.2.3</version>
     </dependency>
-    
-    <!-- AWS Lambda Java Events (for Lambda event types) -->
+
+    <!-- Lambda Java Events (for SQSEvent, etc.) -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-lambda-java-events</artifactId>
       <version>3.11.3</version>
     </dependency>
+
+    <!-- AWS S3 Event Parser (S3EventNotification) -->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-s3</artifactId>
+      <version>1.12.772</version>
+    </dependency>
+
+    <!-- CSV helper -->
     <dependency>
       <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
       <version>5.9</version>
     </dependency>
-    
-    <!-- Gson for JSON processing -->
+
+    <!-- Gson (if needed anywhere) -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.10.1</version>
     </dependency>
+
   </dependencies>
+
 </project>

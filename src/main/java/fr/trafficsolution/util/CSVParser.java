@@ -1,100 +1,76 @@
 package fr.trafficsolution.util;
 
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
-import com.opencsv.exceptions.CsvException;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
- * CSVParser - Utility class for CSV parsing operations.
+ * Simple CSV parser for the IoT dataset.
+ *
+ * Assumptions:
+ *  - First line is a header (starts with "Flow ID") and is skipped.
+ *  - Separator is a comma ','.
+ *  - No quoted fields with embedded commas.
+ *
+ * Example row:
+ *  Flow ID,Src IP,Src Port,Dst IP,Dst Port,Protocol,Timestamp,Flow Duration,Tot Fwd Pkts,...
  */
 public class CSVParser {
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
+
+    // Example timestamp string: "06/12/2022 11:00:15 PM"
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss a", Locale.US);
 
     /**
-     * Parses CSV content from bytes and returns list of records.
+     * Parse the CSV from an InputStream into a list of String[] rows (no header).
      */
-    public List<String[]> parseCsv(byte[] csvBytes) throws IOException, CsvException {
-        try (InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(csvBytes),
-                StandardCharsets.UTF_8);
-                CSVReader csvReader = new CSVReader(reader)) {
+    public List<String[]> parse(InputStream inputStream) throws IOException {
+        List<String[]> rows = new ArrayList<>();
 
-            List<String[]> records = csvReader.readAll();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
 
-            // Skip header if present
-            if (!records.isEmpty() && isHeader(records.get(0))) {
-                records.remove(0);
-            }
+            String line;
+            boolean isFirstLine = true;
 
-            return records;
-        }
-    }
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
 
-    /**
-     * Parses CSV content from InputStream.
-     */
-    public List<String[]> parseCsv(InputStream inputStream) throws IOException, CsvException {
-        byte[] bytes = inputStream.readAllBytes();
-        return parseCsv(bytes);
-    }
+                // Skip header line
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    if (line.startsWith("Flow ID")) {
+                        // It's the header, skip it
+                        continue;
+                    }
+                }
 
-    /**
-     * Writes records to CSV format as bytes.
-     */
-    public byte[] writeCsv(List<String[]> records, String[] header) throws IOException {
-        StringWriter stringWriter = new StringWriter();
-
-        try (CSVWriter csvWriter = new CSVWriter(stringWriter)) {
-            // Write header if provided
-            if (header != null) {
-                csvWriter.writeNext(header);
-            }
-
-            // Write records
-            for (String[] record : records) {
-                csvWriter.writeNext(record);
+                // Split by comma, keep empty strings for missing values
+                String[] cols = line.split(",", -1);
+                rows.add(cols);
             }
         }
 
-        return stringWriter.toString().getBytes(StandardCharsets.UTF_8);
+        return rows;
     }
 
     /**
-     * Checks if a row is a header row.
+     * Parse a full timestamp string (e.g., "06/12/2022 11:00:15 PM")
+     * and return only the date portion.
      */
-    public boolean isHeader(String[] row) {
-        if (row == null || row.length == 0) {
-            return false;
-        }
-        String firstCell = row[0].toLowerCase();
-        return firstCell.contains("src") || firstCell.contains("source") ||
-                firstCell.contains("date") || firstCell.contains("dst") ||
-                firstCell.contains("destination");
-    }
-
-    /**
-     * Parses a date string using ISO_LOCAL_DATE format.
-     */
-    public LocalDate parseDate(String dateStr) {
-        return LocalDate.parse(dateStr, DATE_FORMATTER);
-    }
-
-    /**
-     * Formats a date using ISO_LOCAL_DATE format.
-     */
-    public String formatDate(LocalDate date) {
-        return date.format(DATE_FORMATTER);
-    }
-
-    /**
-     * Gets the date formatter.
-     */
-    public DateTimeFormatter getDateFormatter() {
-        return DATE_FORMATTER;
+    public LocalDate parseDate(String timestamp) {
+        LocalDateTime dateTime = LocalDateTime.parse(timestamp, TIMESTAMP_FORMATTER);
+        return dateTime.toLocalDate();
     }
 }
