@@ -1,140 +1,116 @@
-# AWS Cloud Traffic Solution
+IoT Traffic Processing – AWS Cloud Project
+Overview
 
-A Java project with two worker modules for processing and consolidating traffic data from S3.
+This project implements a cloud-based solution to upload, summarize, consolidate, and export IoT traffic data using AWS managed services.
+The system is event-driven, serverless, and designed to be reliable, fast, and storage-efficient.
 
-## Project Structure
+Architecture Summary
 
-```
-aws-cloud/
-├── pom.xml                          # Maven configuration
-├── src/
-│   └── main/
-│       └── java/
-│           └── fr/
-│               └── traffic-solution/
-│                   ├── SummarizeWorker.java      # Module 1: Reads CSV, computes totals
-│                   ├── ConsolidatorWorker.java  # Module 2: Consolidates summaries
-│                   └── ExampleUsage.java        # Usage examples
-└── README.md
-```
+EC2: Upload Client and Export Client (Java applications)
 
-## Modules
+S3: Stores CSV files (incoming/, summaries/, consolidated/, exports/)
 
-### 1. SummarizeWorker
+SQS: Guarantees reliable processing
 
-**Purpose**: Reads a CSV file from S3, computes totals per (Src, Dst, date) combination, and writes a summary file back to S3.
+AWS Lambda: Summarize and Consolidate Workers
 
-**Features**:
-- Reads CSV files from S3
-- Parses and aggregates data by Source, Destination, and Date
-- Writes summary CSV files back to S3
-- Handles header rows automatically
-- Supports flexible CSV formats
+Prerequisites
 
-**Usage**:
-```java
-SummarizeWorker worker = new SummarizeWorker();
-worker.process("bucket-name", "input/data.csv", "summaries/summary.csv");
-worker.close();
-```
+Java 17
 
-**Expected Input CSV Format**:
-```
-Src, Dst, Date, Value
-A, B, 2024-01-01, 100.5
-A, B, 2024-01-01, 50.0
-...
-```
+Maven
 
-**Output Summary Format**:
-```
-Src, Dst, Date, Total
-A, B, 2024-01-01, 150.5
-...
-```
+AWS Learner Lab (EC2, S3, SQS, Lambda)
 
-### 2. ConsolidatorWorker
+IAM Role attached to EC2 (LabRole)
 
-**Purpose**: Reads multiple summary files from S3, consolidates them, and updates aggregate totals.
+Build Instructions (Local Machine)
 
-**Features**:
-- Reads multiple summary files from S3 (by prefix or specific keys)
-- Merges summaries and aggregates totals
-- Writes consolidated results back to S3
-- Handles pagination for large S3 listings
+From the project root:
 
-**Usage**:
-```java
-// Consolidate all summaries with a prefix
-ConsolidatorWorker worker = new ConsolidatorWorker();
-worker.consolidateSummaries("bucket-name", "summaries/", "aggregates/consolidated.csv");
-worker.close();
+mvn clean package
 
-// Or consolidate specific files
-List<String> files = Arrays.asList("summaries/file1.csv", "summaries/file2.csv");
-worker.consolidateSummaries("bucket-name", files, "aggregates/consolidated.csv");
-```
 
-## Dependencies
+This generates the following JAR files in target/:
 
-- **AWS SDK for Java 2.x**: For S3 operations
-- **OpenCSV**: For CSV parsing and writing
-- **Java 17**: Required Java version
+aws-cloud-1.0-SNAPSHOT-jar-with-dependencies.jar (Lambda)
 
-## Building the Project
+upload-client-jar-with-dependencies.jar
 
-```bash
-# Compile the project
-mvn compile
+export-client-jar-with-dependencies.jar
 
-# Package the project (creates JAR with dependencies)
-mvn package
+AWS Setup (Once)
+S3 Bucket Structure
+my-iot-uploads-group12/
+ ├── incoming/
+ ├── summaries/
+ ├── consolidated/
+ └── exports/
 
-# Run tests (if any)
-mvn test
-```
+SQS Queues
 
-## Configuration
+incoming-file-queue
 
-### AWS Credentials
+consolidator-queue
 
-The workers use the default AWS credential chain. Make sure you have:
-- AWS credentials configured via `~/.aws/credentials`, or
-- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`), or
-- IAM role (if running on EC2/Lambda)
+Lambda Functions
 
-### Region Configuration
+SummarizeWorker
 
-By default, both workers use `US_EAST_1` region. To change:
+ConsolidatorWorker
 
-```java
-S3Client s3Client = S3Client.builder()
-    .region(Region.US_WEST_2)  // Your preferred region
-    .build();
-    
-SummarizeWorker worker = new SummarizeWorker(s3Client);
-```
+Both Lambdas use:
 
-## Example Workflow
+Runtime: Java 17
 
-1. **Process raw data**:
-   ```java
-   SummarizeWorker summarizeWorker = new SummarizeWorker();
-   summarizeWorker.process("my-bucket", "raw-data/input.csv", "summaries/summary1.csv");
-   summarizeWorker.close();
-   ```
+Role: LabRole
 
-2. **Consolidate multiple summaries**:
-   ```java
-   ConsolidatorWorker consolidatorWorker = new ConsolidatorWorker();
-   consolidatorWorker.consolidateSummaries("my-bucket", "summaries/", "aggregates/final.csv");
-   consolidatorWorker.close();
-   ```
+Running the Project (Step by Step)
+1. Upload Client (EC2)
 
-## Notes
+Upload the JAR to EC2 using SFTP (FileZilla / WinSCP):
 
-- Date format: ISO_LOCAL_DATE (YYYY-MM-DD)
-- The workers automatically handle CSV headers
-- Summary files are sorted by (Src, Dst, Date) in the output
-- All S3 operations use UTF-8 encoding
+upload-client-jar-with-dependencies.jar
 
+
+Run on EC2:
+
+export BUCKET_NAME=my-iot-uploads-group12
+java -jar upload-client-jar-with-dependencies.jar /home/ec2-user/data.csv
+
+
+Result:
+
+CSV uploaded to S3/incoming/
+
+Summarize and Consolidate Lambdas triggered automatically
+
+2. Verify Processing (AWS Console)
+
+Check in S3:
+
+summaries/ → summary CSV created
+
+consolidated/ → data_consolidated.csv updated
+
+3. Export Client (EC2)
+
+Upload the Export Client JAR to EC2:
+
+export-client-jar-with-dependencies.jar
+
+
+Run on EC2 with a valid source/destination IP:
+
+export BUCKET_NAME=my-iot-uploads-group12
+java -jar export-client-jar-with-dependencies.jar "<SRC_IP>" "<DST_IP>"
+
+
+Example:
+
+java -jar export-client-jar-with-dependencies.jar "192.168.1.10" "10.0.0.5"
+
+
+Result:
+
+Filtered CSV created in S3/exports/
