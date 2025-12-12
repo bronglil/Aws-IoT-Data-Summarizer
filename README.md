@@ -41,13 +41,12 @@ This command generates the following JAR files in the `target/` directory:
 ## AWS Setup (One-Time)
 
 ### S3 Bucket Structure
-```
 my-iot-uploads-group12/
  ├── incoming/
  ├── summaries/
  ├── consolidated/
  └── exports/
-```
+
 
 ### SQS Queues
 
