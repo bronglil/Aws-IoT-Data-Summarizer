@@ -1,116 +1,105 @@
-IoT Traffic Processing – AWS Cloud Project
-Overview
+#IoT Traffic Processing – AWS Cloud Project
+##Overview
 
-This project implements a cloud-based solution to upload, summarize, consolidate, and export IoT traffic data using AWS managed services.
-The system is event-driven, serverless, and designed to be reliable, fast, and storage-efficient.
-
+This project implements a cloud-based solution to upload, summarize, consolidate, and export IoT traffic data using AWS managed services. The system is event-driven, serverless, and designed to be reliable, fast, and storage-efficient.
 Architecture Summary
 
-EC2: Upload Client and Export Client (Java applications)
-
-S3: Stores CSV files (incoming/, summaries/, consolidated/, exports/)
-
-SQS: Guarantees reliable processing
-
-AWS Lambda: Summarize and Consolidate Workers
+EC2 – Upload Client and Export Client (Java applications)
+S3 – Stores CSV files (incoming/, summaries/, consolidated/, exports/)
+SQS – Guarantees reliable message processing
+AWS Lambda – Summarize and Consolidate Workers
 
 Prerequisites
-
+```
 Java 17
-
 Maven
+AWS Learner Lab access
+AWS services:
 
-AWS Learner Lab (EC2, S3, SQS, Lambda)
+EC2
+S3
+SQS
+Lambda
 
-IAM Role attached to EC2 (LabRole)
+
+IAM Role attached to EC2: LabRole
 
 Build Instructions (Local Machine)
-
-From the project root:
+From the project root directory, run:
 
 mvn clean package
+```
+## Code Structure
+```
 
+This command generates the following JAR files in the `target/` directory:
 
-This generates the following JAR files in target/:
+- `aws-cloud-1.0-SNAPSHOT-jar-with-dependencies.jar` (Lambda)
+- `upload-client-jar-with-dependencies.jar`
+- `export-client-jar-with-dependencies.jar`
 
-aws-cloud-1.0-SNAPSHOT-jar-with-dependencies.jar (Lambda)
+## AWS Setup (One-Time)
 
-upload-client-jar-with-dependencies.jar
-
-export-client-jar-with-dependencies.jar
-
-AWS Setup (Once)
-S3 Bucket Structure
+### S3 Bucket Structure
+```
 my-iot-uploads-group12/
  ├── incoming/
  ├── summaries/
  ├── consolidated/
  └── exports/
+```
 
-SQS Queues
+### SQS Queues
 
-incoming-file-queue
+- `incoming-file-queue`
+- `consolidator-queue`
 
-consolidator-queue
+### Lambda Functions
 
-Lambda Functions
+- `SummarizeWorker`
+- `ConsolidatorWorker`
 
-SummarizeWorker
+Both Lambda functions use:
 
-ConsolidatorWorker
+- Runtime: Java 17
+- Execution Role: LabRole
 
-Both Lambdas use:
+## Running the Project (Step by Step)
 
-Runtime: Java 17
+### 1. Upload Client (EC2)
 
-Role: LabRole
-
-Running the Project (Step by Step)
-1. Upload Client (EC2)
-
-Upload the JAR to EC2 using SFTP (FileZilla / WinSCP):
-
+Upload the following JAR file to EC2 using SFTP (FileZilla or WinSCP):
+```
 upload-client-jar-with-dependencies.jar
 
-
-Run on EC2:
+## Run the Upload Client on EC2:
 
 export BUCKET_NAME=my-iot-uploads-group12
 java -jar upload-client-jar-with-dependencies.jar /home/ec2-user/data.csv
+```
 
+**Result:**
 
-Result:
+- CSV file uploaded to `S3/incoming/`
+- Summarize and Consolidate Lambda functions are triggered automatically
 
-CSV uploaded to S3/incoming/
+### 2. Verify Processing (AWS Console)
 
-Summarize and Consolidate Lambdas triggered automatically
+Check the S3 bucket:
 
-2. Verify Processing (AWS Console)
+- `summaries/` → summarized CSV file created
+- `consolidated/` → `data_consolidated.csv` updated
 
-Check in S3:
-
-summaries/ → summary CSV created
-
-consolidated/ → data_consolidated.csv updated
-
-3. Export Client (EC2)
+### 3. Export Client (EC2)
 
 Upload the Export Client JAR to EC2:
-
+```
 export-client-jar-with-dependencies.jar
 
 
-Run on EC2 with a valid source/destination IP:
+## Run the Export Client with a valid source and destination IP:
 
+```
 export BUCKET_NAME=my-iot-uploads-group12
 java -jar export-client-jar-with-dependencies.jar "<SRC_IP>" "<DST_IP>"
-
-
-Example:
-
-java -jar export-client-jar-with-dependencies.jar "192.168.1.10" "10.0.0.5"
-
-
-Result:
-
-Filtered CSV created in S3/exports/
+```
