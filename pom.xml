@@ -19,6 +19,7 @@
     <sourceDirectory>src/main/java</sourceDirectory>
 
     <plugins>
+
       <!-- Java 17 compiler -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -28,7 +29,7 @@
         </configuration>
       </plugin>
 
-      <!-- Create fat JAR for AWS Lambda (SummarizeWorker + ConsolidateWorker) -->
+      <!-- Lambda fat JAR (SummarizeWorker + ConsolidateWorker) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -47,12 +48,14 @@
         </executions>
       </plugin>
 
-      <!-- Create fat JAR for the Upload Client (to run on EC2) -->
+      <!-- EC2 clients fat JARs (Upload + Export) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>3.6.0</version>
         <executions>
+
+          <!-- Upload Client -->
           <execution>
             <id>upload-client-jar</id>
             <phase>package</phase>
@@ -62,24 +65,43 @@
             <configuration>
               <archive>
                 <manifest>
-                  <!-- Main class for your Upload Client -->
                   <mainClass>fr.trafficsolution.client.UploadClient</mainClass>
                 </manifest>
               </archive>
               <descriptorRefs>
                 <descriptorRef>jar-with-dependencies</descriptorRef>
               </descriptorRefs>
-              <!-- Base name for the client JAR -->
               <finalName>upload-client</finalName>
             </configuration>
           </execution>
+
+          <!-- Export Client -->
+          <execution>
+            <id>export-client-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <archive>
+                <manifest>
+                  <mainClass>fr.trafficsolution.client.ExportClient</mainClass>
+                </manifest>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+              <finalName>export-client</finalName>
+            </configuration>
+          </execution>
+
         </executions>
       </plugin>
 
     </plugins>
   </build>
 
-  <!-- AWS SDK v2 version management -->
+  <!-- AWS SDK v2 BOM -->
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -94,33 +116,31 @@
 
   <dependencies>
 
-    <!-- AWS SDK v2 for S3 operations -->
+    <!-- AWS SDK v2 -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
     </dependency>
 
-    <!-- SQS (used by workers, fine to have here) -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>sqs</artifactId>
     </dependency>
 
-    <!-- Lambda Java Core -->
+    <!-- Lambda -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-lambda-java-core</artifactId>
       <version>1.2.3</version>
     </dependency>
 
-    <!-- Lambda Java Events (for SQSEvent, etc.) -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-lambda-java-events</artifactId>
       <version>3.11.3</version>
     </dependency>
 
-    <!-- AWS S3 Event Parser (S3EventNotification) -->
+    <!-- Needed for S3 event parsing -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
@@ -134,7 +154,7 @@
       <version>5.9</version>
     </dependency>
 
-    <!-- Gson (if needed anywhere) -->
+    <!-- JSON helper -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
